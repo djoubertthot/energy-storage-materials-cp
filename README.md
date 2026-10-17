@@ -1,16 +1,20 @@
 # Energy Storage Materials - Constraint Programming Model
 
-Modèle de programmation par contraintes pour le screening de matériaux de stockage d'énergie haute densité (objectif : dépasser les batteries Li-ion en densité utile électrique).
+Modèle CSP pour matériaux de stockage énergétique haute densité.
 
-## Contenu du dépôt
-- `model/` : description des contraintes (compatibilité chimique, stabilité thermodynamique, densité, coût...)
-- `data/` : données de stabilité (ΔHf, energy above hull) pour oxydes, hydrures, alliages, etc.
-- `scripts/` : exemples d'interrogation Materials Project
-- `candidates/` : tableaux des systèmes évalués
+## Sources de données
+Voir `data/sources.md` pour la liste complète :
+- Materials Project
+- OQMD
+- AFLOW
+- JARVIS
+- Materials Cloud
+- NOMAD
+- et autres
 
-Développé dans le cadre de discussions sur le stockage énergétique au-delà des Li-ion.
+## Contenu
+- model/ : contraintes
+- data/ : sources et résumés de stabilité
+- scripts/ : exemples d'accès aux bases
 
-## Prochaines étapes
-- Implémenter le modèle en MiniZinc ou OR-Tools
-- Enrichir les données via l'API Materials Project
-- Optimiser les contraintes pour densité > Li-ion + sortie électrique
+Développé avec Grok (xAI).
