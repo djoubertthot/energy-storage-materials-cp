@@ -1,0 +1,13 @@
+material_id,formula,formation_energy_per_atom,energy_above_hull,elements,nelements,band_gap
+mp-19770,Fe2O3,-1.71,0.0,"Fe,O",2,2.1
+mp-19306,Al2O3,-3.43,0.0,"Al,O",2,6.0
+mp-2657,TiO2,-3.26,0.0,"Ti,O",2,1.8
+mp-19006,MnO2,-1.85,0.0,"Mn,O",2,0.0
+mp-19395,MgO,-3.14,0.0,"Mg,O",2,7.7
+mp-1265,ZnO,-1.79,0.0,"Zn,O",2,0.7
+mp-19795,Cr2O3,-2.35,0.0,"Cr,O",2,3.4
+mp-568286,LiFePO4,-2.45,0.0,"Li,Fe,P,O",4,3.7
+mp-1091399,MgH2,-0.29,0.02,"Mg,H",2,3.5
+mp-23209,LiH,-0.45,0.0,"Li,H",2,3.0
+# Note: This is a representative sample. Full ~9000 materials require Materials Project API key.
+# Run scripts/fetch_mp_bulk.py with your key to generate the complete file.
