@@ -1,85 +1,56 @@
 """
-Script amélioré de fusion multi-bases avec meilleures fonctions de téléchargement.
+Script de fusion avec pagination complète pour grands volumes.
 
 Améliorations :
-- Retries automatiques
-- Meilleure gestion d'erreurs
-- Pagination pour OQMD
-- Plus de champs utiles
-- Rate limiting basique
+- Pagination complète OQMD
+- Chunking Materials Project
+- Retries + progression
+- Configurable MAX_TOTAL
 """
 
 import pandas as pd
 from pathlib import Path
 import requests
 import time
-from typing import Optional
 
 # ========== CONFIG ==========
 MP_API_KEY = "VOTRE_CLE_MATERIALS_PROJECT"
-MAX_PER_SOURCE = 5000
-OUTPUT = Path("data/all_bases_unified.csv")
-RETRIES = 3
-SLEEP_BETWEEN = 1.5
+MAX_TOTAL = 20000  # Nombre max total souhaité
+PAGE_SIZE = 100
+OUTPUT = Path("data/all_bases_unified_paginated.csv")
+RETRIES = 4
 
-def safe_request(url, params=None, retries=RETRIES):
-    """Requête avec retries."""
-    for attempt in range(retries):
+def safe_get(url, params=None):
+    for i in range(RETRIES):
         try:
-            resp = requests.get(url, params=params, timeout=60)
-            if resp.status_code == 200:
-                return resp
-            print(f"Status {resp.status_code}, retry {attempt+1}")
+            r = requests.get(url, params=params, timeout=90)
+            if r.status_code == 200:
+                return r
+            print(f"HTTP {r.status_code} — retry {i+1}")
         except Exception as e:
-            print(f"Erreur requête (tentative {attempt+1}): {e}")
-        time.sleep(SLEEP_BETWEEN * (attempt + 1))
+            print(f"Erreur: {e} — retry {i+1}")
+        time.sleep(2 ** i)
     return None
 
-def fetch_mp_improved():
-    if not MP_API_KEY or "VOTRE" in MP_API_KEY:
-        print("MP : clé manquante")
-        return pd.DataFrame()
-    try:
-        from mp_api.client import MPRester
-        print("Materials Project (amélioré)...")
-        with MPRester(MP_API_KEY) as mpr:
-            docs = list(mpr.materials.summary.search(
-                energy_above_hull=(0, 0.2),
-                fields=["material_id", "formula_pretty", "energy_above_hull",
-                        "formation_energy_per_atom", "elements", "nelements", "band_gap", "density"],
-                chunk_size=1000
-            ))[:MAX_PER_SOURCE]
-            return pd.DataFrame([{
-                "source": "MaterialsProject",
-                "id": d.material_id,
-                "formula": d.formula_pretty,
-                "e_hull": d.energy_above_hull,
-                "e_form": d.formation_energy_per_atom,
-                "nelements": d.nelements,
-                "elements": ",".join(sorted(d.elements or [])),
-                "band_gap": getattr(d, "band_gap", None),
-                "density": getattr(d, "density", None)
-            } for d in docs])
-    except Exception as e:
-        print(f"MP error: {e}")
-        return pd.DataFrame()
-
-def fetch_oqmd_paginated():
-    print("OQMD (paginé)...")
-    all_items = []
-    page_size = 100
-    for offset in range(0, MAX_PER_SOURCE, page_size):
-        resp = safe_request("https://oqmd.org/oqmdapi/formationenergy",
-                            params={"limit": page_size, "offset": offset})
+def fetch_oqmd_full_pagination(max_items=MAX_TOTAL):
+    """Pagination complète OQMD."""
+    print("OQMD : pagination complète...")
+    all_data = []
+    offset = 0
+    while len(all_data) < max_items:
+        resp = safe_get("https://oqmd.org/oqmdapi/formationenergy",
+                        params={"limit": PAGE_SIZE, "offset": offset})
         if not resp:
             break
         items = resp.json().get("data", [])
         if not items:
+            print("  Fin des données OQMD")
             break
-        all_items.extend(items)
-        print(f"  Offset {offset}: {len(items)} items")
-        time.sleep(0.5)
-    if not all_items:
+        all_data.extend(items)
+        print(f"  OQMD offset {offset} → total {len(all_data)}")
+        offset += PAGE_SIZE
+        time.sleep(0.8)
+    if not all_data:
         return pd.DataFrame()
     return pd.DataFrame([{
         "source": "OQMD",
@@ -87,35 +58,58 @@ def fetch_oqmd_paginated():
         "formula": i.get("composition"),
         "e_hull": i.get("stability"),
         "e_form": i.get("delta_e"),
-        "nelements": None,
-        "elements": "",
-        "band_gap": None,
-        "density": None
-    } for i in all_items[:MAX_PER_SOURCE]])
+        "elements": ""
+    } for i in all_data[:max_items]])
+
+def fetch_mp_chunked():
+    if "VOTRE" in MP_API_KEY:
+        print("MP : clé manquante")
+        return pd.DataFrame()
+    try:
+        from mp_api.client import MPRester
+        print("Materials Project : chunking...")
+        with MPRester(MP_API_KEY) as mpr:
+            docs = list(mpr.materials.summary.search(
+                energy_above_hull=(0, 0.25),
+                fields=["material_id", "formula_pretty", "energy_above_hull",
+                        "formation_energy_per_atom", "elements"],
+                chunk_size=1000
+            ))[:MAX_TOTAL]
+            return pd.DataFrame([{
+                "source": "MaterialsProject",
+                "id": d.material_id,
+                "formula": d.formula_pretty,
+                "e_hull": d.energy_above_hull,
+                "e_form": d.formation_energy_per_atom,
+                "elements": ",".join(sorted(d.elements or []))
+            } for d in docs])
+    except Exception as e:
+        print(f"MP error: {e}")
+        return pd.DataFrame()
 
 def main():
-    print("=== Fusion améliorée de toutes les bases ===")
+    print("=== Pagination complète — fusion multi-bases ===")
     frames = []
-    df_mp = fetch_mp_improved()
+
+    df_mp = fetch_mp_chunked()
     if not df_mp.empty:
         frames.append(df_mp)
-        print(f"MP: {len(df_mp)}")
+        print(f"MP : {len(df_mp)} matériaux")
 
-    df_oqmd = fetch_oqmd_paginated()
+    df_oqmd = fetch_oqmd_full_pagination()
     if not df_oqmd.empty:
         frames.append(df_oqmd)
-        print(f"OQMD: {len(df_oqmd)}")
+        print(f"OQMD : {len(df_oqmd)} matériaux")
 
     if not frames:
-        print("Aucune donnée.")
+        print("Aucune donnée récupérée.")
         return
 
     unified = pd.concat(frames, ignore_index=True)
     unified = unified.drop_duplicates(subset=["formula"], keep="first")
     OUTPUT.parent.mkdir(exist_ok=True)
     unified.to_csv(OUTPUT, index=False)
-    print(f"\n✅ {len(unified)} matériaux → {OUTPUT}")
-    print(unified.head())
+    print(f"\n✅ Total unique : {len(unified)} → {OUTPUT}")
 
 if __name__ == "__main__":
     main()
