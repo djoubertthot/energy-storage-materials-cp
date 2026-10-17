@@ -1,0 +1,16 @@
+source,id,formula,formation_energy,e_above_hull,elements,band_gap,density
+MP,mp-1,LiFePO4,-1.85,0.02,"Li,Fe,P,O",3.5,3.5
+MP,mp-2,LiCoO2,-1.42,0.01,"Li,Co,O",1.2,5.0
+OQMD,oqmd-1,MgH2,-0.35,0.00,"Mg,H",4.0,1.45
+OQMD,oqmd-2,NaAlH4,-0.42,0.05,"Na,Al,H",5.1,1.25
+JARVIS,jv-1,MoS2,-1.10,0.03,"Mo,S",1.8,5.0
+AFLOW,af-1,TiO2,-3.20,0.00,"Ti,O",3.2,4.2
+MP,mp-3,Li4Ti5O12,-1.95,0.01,"Li,Ti,O",3.8,3.5
+OQMD,oqmd-3,CaH2,-0.55,0.00,"Ca,H",4.5,1.9
+JARVIS,jv-2,WS2,-1.05,0.04,"W,S",1.9,7.5
+AFLOW,af-2,Al2O3,-3.45,0.00,"Al,O",8.5,4.0
+MP,mp-4,LiNiO2,-1.38,0.02,"Li,Ni,O",0.5,4.8
+OQMD,oqmd-4,LiBH4,-0.28,0.08,"Li,B,H",6.0,0.67
+JARVIS,jv-3,hBN,-1.30,0.00,"B,N",5.5,2.1
+AFLOW,af-3,SiC,-0.55,0.00,"Si,C",2.4,3.2
+MP,mp-5,Na3V2(PO4)3,-1.65,0.03,"Na,V,P,O",1.5,3.0
